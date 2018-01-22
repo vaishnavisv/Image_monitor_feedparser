@@ -3,12 +3,15 @@
 	"description": "A demo of Dan MacTough's feedparser package.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"version": "0.4.3",
-	"dependencies" : {
+	"dependencies": {
+		"express": "^4.16.2",
+		"feedparser": "*",
+		"morgan": "^1.9.0",
 		"request": "*",
-		"feedparser": "*"
-		}, 
+		"rss-feed-emitter": "^1.0.7"
+	},
 	"license": "MIT",
 	"engines": {
 		"node": "*"
-		}
 	}
+}
