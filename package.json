@@ -4,6 +4,7 @@
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"version": "0.4.3",
 	"dependencies": {
+		"cors": "^2.8.4",
 		"express": "^4.16.2",
 		"feedparser": "*",
 		"morgan": "^1.9.0",

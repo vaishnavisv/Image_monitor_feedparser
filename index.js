@@ -1,6 +1,6 @@
 const express = require('express')
 const app = express();
-
+var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
 /*  The MIT License (MIT)
@@ -24,10 +24,20 @@ var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
+	var whitelist = ['http://localhost:3000/']
+	var corsOptions = {
+	  origin: function (origin, callback) {
+	    if (whitelist.indexOf(origin) !== -1) {
+	      callback(null, true)
+	    } else {
+	      callback(new Error('Not allowed by CORS'))
+	    }
+	  }
+	}
+	app.use(cors())
 
 
-
-app.get('/',function(req, res) {
+app.get('/',cors(),function(req, res) {
 	 var user_id = req.param('id');
 	 
 	  
