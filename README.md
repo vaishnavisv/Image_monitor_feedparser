@@ -20,7 +20,9 @@ If you're new to feedparser, this might help you get started a bit faster with l
 
 3. At the command line: `npm install`
 
-4. `node demo.js`
+4. `node index.js`
+
+5. To test go to the browser and give the url as hostname:portno?id=url of the xml feed
 
 You should see a list of item titles from the feed. 
 
