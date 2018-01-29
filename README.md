@@ -22,7 +22,10 @@ If you're new to feedparser, this might help you get started a bit faster with l
 
 4. `node index.js`
 
-5. To test go to the browser and give the url as hostname:portno?id=url of the xml feed
+5. To test go to the browser and give the url as 
+   "hostname:portno?id=url of the xml feed"
+   example: "localhost:3000?id=http://newsrack.in/rss/servelots/tnusspWater/Floods2009/rss.xml"
+   
 
 You should see a list of item titles from the feed. 
 
