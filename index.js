@@ -2,6 +2,24 @@ const express = require('express')
 const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
+const FeedParser = require ("feedparser");
+
+// Load the full build.
+var _ = require('lodash');
+// Load the core build.
+//var _ = require('lodash/core');
+// Load the FP build for immutable auto-curried iteratee-first data-last methods.
+var fp = require('lodash/fp');
+ 
+// Load method categories.
+var array = require('lodash/array');
+var object = require('lodash/fp/object');
+ 
+// Cherry-pick methods for smaller browserify/rollup/webpack bundles.
+var at = require('lodash/at');
+var curryN = require('lodash/fp/curryN');
+
+
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2017 Dave Winer
@@ -37,21 +55,161 @@ var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 	app.use(cors())
 
 
-app.get('/',cors(),function(req, res) {
-	 var user_id = req.param('id');
-	 
-	  
+
+//connecting to couch db
+const request = require ("request");
+var url = 'http://localhost:5984/'
+var db = 'feeds'
+var urlTestFeed;
+
+var linkarray=[];
+var feedsarray=[];
+var unionFeeds=[];
+
+
+function pullFeedsOnTime(link,feedname,res) {
+	
+/*request(url + db+'/_design/links/_view/link?group_level=1', function(err, res, body) {
+			parsedBody = JSON.parse(body);
+			
+
+		linkarray = parsedBody.rows;
+		console.log(linkarray)
+		if(linkarray !== undefined){
+	linkarray.map(key=>{*/
+			//console.log(feedname);
+			urlTestFeed = link;
+		
+		getFeed (urlTestFeed, function (err, feedItems) {
+			if (!err) {
+				function pad (num) { 
+					var s = num.toString (), ctplaces = 3;
+					while (s.length < ctplaces) {
+					s = "0" + s;
+					}
+					return (s);
+				}
+			console.log ("There are " + feedItems.length + " items in the feed.\n");
+				//res.send(feedItems);
+				for (var i = 0; i < feedItems.length; i++) {
+					//console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
+
+				}
+				//console.log(feedItems);
+				//Get the feeds from the database 
+			request(url + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				parsedFeeds = JSON.parse(body);
+				feedsarray = parsedFeeds.rows;
+				//Pass the feeds from the database to compare if the
+				//feeds from newsrack are already present
+				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
+				//add the feeds which are not in the database to the database
+				  unionFeeds.map(feed=>{
+				  	feed.feednme = feedname;
+					request.post({
+					    url: url + db,
+					    body: feed,
+					    json: true,
+					  }, function(err, resp, body) {
+					  
+					    console.log(err,body);
+					});
+				});
+
+			});
+
+				
+				
+			}
+		});
+	//});
+   //}
+
+   		
+  //});
+}
+
+function differenceOfFeeds(feedsarray,feedItems) {
+	//console.log("feeds",feedItems[0].title,feedsarray[0].doc.title); 
+	//var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }];
+	//var res = _.differenceWith(objects, [{'x':2,'y':1},{ 'x': 1, 'y': 2 }], _.isEqual);
+	var databasefeeds = feedsarray.map(value=>{
+
+		delete value.doc._id;
+		delete value.doc._rev;	
+
+		return value.doc;
+
+	});
+
 	
 
-const reque = require ("request");
-const FeedParser = require ("feedparser");
+	var res = _.differenceBy(feedItems,databasefeeds,'title');
+	for (var i = 0; i < res.length; i++) {
+		console.log("every result",res[i].title);
+	}
+	console.log("result",res.length)
+	
+	return res;
 
 
 
-const urlTestFeed = user_id;
+	
+}
+
+
+//Pull feeds on time inteval
+app.get('/',cors(),function(req, res) {
+
+	 var link = req.param('url');
+	 var feedname = req.param('feedname');
+	res.end();
+	pullFeedsOnTime(link,feedname,res)
+	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
+
+});
+
+
+
+app.get('/first',cors(),function(req, res) {
+
+	 var user_id = req.param('id');
+
+
+
+
+
+urlTestFeed = user_id;
+getFeed (urlTestFeed, function (err, feedItems) {
+	if (!err) {
+		function pad (num) { 
+			var s = num.toString (), ctplaces = 3;
+			while (s.length < ctplaces) {
+			s = "0" + s;
+			}
+			return (s);
+		}
+	console.log ("There are " + feedItems.length + " items in the feed.\n");
+		res.send(feedItems);
+		for (var i = 0; i < feedItems.length; i++) {
+			console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
+
+		}
+		
+		
+	}
+});
+
+
+
+	
+  
+});
+
+
 
 function getFeed (urlfeed, callback) {
-	var req = reque (urlfeed);
+	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
 	req.on ("response", function (response) {
@@ -84,7 +242,7 @@ function getFeed (urlfeed, callback) {
 	}
 
 console.log ("\n" + myProductName + " v" + myVersion + ".\n"); 
-getFeed (urlTestFeed, function (err, feedItems) {
+/*getFeed (urlTestFeed, function (err, feedItems) {
 	if (!err) {
 		function pad (num) { 
 			var s = num.toString (), ctplaces = 3;
@@ -94,17 +252,15 @@ getFeed (urlTestFeed, function (err, feedItems) {
 			return (s);
 			}
 		console.log ("There are " + feedItems.length + " items in the feed.\n");
-		for (var i = 0; i < feedItems.length; i++) {
-			console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
+			res.send(feedItems);
+			for (var i = 0; i < feedItems.length; i++) {
+				console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
 
 			}
-			res.send(feedItems)
+			
+			
 		}
-	});
-
-	
-  
-});
+	});*/
 
 
 
