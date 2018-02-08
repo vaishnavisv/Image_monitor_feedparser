@@ -12,7 +12,7 @@ const FeedParser = require ("feedparser");
 
 //for (var k in envConfig) {
  // process.env[k] = envConfig[k]
-  //console.log(process.env[k]);
+  //console.log(process.env[k]); 
 //}
 
 //var CONFIG = require('../config.json');
@@ -24,15 +24,15 @@ var dbpassword= CONFIG.dbpassword;
 var dbuserDB=CONFIG.dbuserDB;
 var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
-var dbprotocol = process.env.protocol;
+var dbprotocol = process.env.dbprotocol;
 console.log(dbprotocol);
-var domain=process.env.host;
+var domain=process.env.domainname;
 console.log(domain);
 var couchdbdomain=dbprotocol + domain;
 console.log(couchdbdomain);
-var port=process.env.feedparserport;
-console.log(port);
-
+//var port=process.env.feedParserServiceUrl;
+//console.log(port);
+var port=3500;
 
 
 
