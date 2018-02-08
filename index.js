@@ -2,7 +2,7 @@ const express = require('express')
 const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
-const FeedParser = require ("feedparser");
+
 
 // Load the full build.
 var _ = require('lodash');
@@ -18,6 +18,37 @@ var object = require('lodash/fp/object');
 // Cherry-pick methods for smaller browserify/rollup/webpack bundles.
 var at = require('lodash/at');
 var curryN = require('lodash/fp/curryN');
+
+//const dotenv = require('dotenv')
+//const fs = require('fs')
+//const envConfig = dotenv.parse(fs.readFileSync('./variables.env'))
+ 
+
+
+//for (var k in envConfig) {
+ // process.env[k] = envConfig[k]
+  //console.log(process.env[k]);
+//}
+
+//var CONFIG = require('../config.json');
+/*
+var dbprotocol = CONFIG.dbprotocol;
+var dbhost = CONFIG.dbhost;
+var dbuser = CONFIG.dbuser;
+var dbpassword= CONFIG.dbpassword;
+var dbuserDB=CONFIG.dbuserDB;
+var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
+*/
+var dbprotocol = process.env.protocol;
+console.log(dbprotocol);
+var domain=process.env.host;
+console.log(domain);
+var couchdbdomain=dbprotocol + domain;
+console.log(couchdbdomain);
+var port=process.env.feedparserport;
+console.log(port);
+
+
 
 
 
@@ -42,7 +73,7 @@ var curryN = require('lodash/fp/curryN');
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-	var whitelist = ['http://localhost:3000/']
+	var whitelist = [domain]
 	var corsOptions = {
 	  origin: function (origin, callback) {
 	    if (whitelist.indexOf(origin) !== -1) {
@@ -179,6 +210,7 @@ app.get('/first',cors(),function(req, res) {
 
 
 
+
 urlTestFeed = user_id;
 getFeed (urlTestFeed, function (err, feedItems) {
 	if (!err) {
@@ -264,4 +296,4 @@ console.log ("\n" + myProductName + " v" + myVersion + ".\n");
 
 
 
-app.listen(3000, () => console.log('Example app listening on port 3000!'))
+app.listen(port, () => console.log('Example app listening on port '))
