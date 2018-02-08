@@ -3,7 +3,7 @@ const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
-
+var FeedParser = require('feedparser');
 // Load the full build.
 var _ = require('lodash');
 // Load the core build.
@@ -41,15 +41,15 @@ var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
 var dbprotocol = process.env.dbprotocol;
 console.log(dbprotocol);
-var domain=process.env.domainname;
-console.log(domain);
-var couchdbdomain=dbprotocol + domain;
+var clienturl=process.env.clienturl;
+console.log(clienturl);
+var couchdbdomain=dbprotocol + clienturl;
 console.log(couchdbdomain);
 //var port=process.env.feedParserServiceUrl;
 //console.log(port);
-var port=3500;
-
-
+var port=process.env.feedParserPort;
+console.log(port);
+	
 
 
 /*  The MIT License (MIT)
@@ -73,7 +73,7 @@ var port=3500;
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-	var whitelist = [domain]
+	var whitelist = [clienturl]
 	var corsOptions = {
 	  origin: function (origin, callback) {
 	    if (whitelist.indexOf(origin) !== -1) {
@@ -89,8 +89,14 @@ var port=3500;
 
 //connecting to couch db
 const request = require ("request");
-var url = 'http://localhost:5984/'
-var db = 'feeds'
+var dbprotocol=process.env.dbprotocol;
+var dbhost=process.env.dbhost;
+var dbport=process.env.dbPort;
+var url = dbprotocol+dbhost+':'+dbport;
+
+var db = process.env.feeddbname;
+
+console.log("urls",url,db)
 var urlTestFeed;
 
 var linkarray=[];
@@ -128,11 +134,14 @@ function pullFeedsOnTime(link,feedname,res) {
 				}
 				//console.log(feedItems);
 				//Get the feeds from the database 
-			request(url + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				console.log("inside url",url+db+'/_all_docs?include_docs=true')
+			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				console.log("bodu",body);
 				parsedFeeds = JSON.parse(body);
-				feedsarray = parsedFeeds.rows;
+				//feedsarray = parsedFeeds.rows;
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
+				
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
 				  unionFeeds.map(feed=>{
