@@ -82,7 +82,7 @@ const request = require ("request");
 var dbprotocol=process.env.dbprotocol;
 var dbhost=process.env.dbhost;
 var dbport=process.env.dbPort;
-var url = dbprotocol+dbhost+':'+dbport;
+var url = dbprotocol+dbhost;
 
 var db = process.env.feeddbname;
 
