@@ -73,17 +73,7 @@ console.log(port);
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-	var whitelist = [clienturl]
-	var corsOptions = {
-	  origin: function (origin, callback) {
-	    if (whitelist.indexOf(origin) !== -1) {
-	      callback(null, true)
-	    } else {
-	      callback(new Error('Not allowed by CORS'))
-	    }
-	  }
-	}
-	app.use(cors())
+	
 
 
 
@@ -196,7 +186,19 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	
 }
-
+app.use(function(req, res, next) {
+  //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
+  var allowedOrigins=clienturlwithprotocol;
+  var origin = req.headers.origin;
+  if(allowedOrigins.indexOf(origin) > -1){
+       res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  //res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:8020');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', true);
+  return next();
+}); 
 
 //Pull feeds on time inteval
 app.get('/',cors(),function(req, res) {
