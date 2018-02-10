@@ -205,6 +205,7 @@ app.get('/',cors(),function(req, res) {
 
 	 var link = req.param.url;
 	 var feedname = req.param.feedname;
+	console.log(req.param, req, link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
 	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
@@ -216,7 +217,7 @@ app.get('/',cors(),function(req, res) {
 app.get('/first',cors(),function(req, res) {
 
 	 var user_id = req.param.id;
-
+	console.log(req.param, req, user_id, req.param.id);
 
 
 
