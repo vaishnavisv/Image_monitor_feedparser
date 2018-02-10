@@ -203,8 +203,8 @@ app.use(function(req, res, next) {
 //Pull feeds on time inteval
 app.get('/',cors(),function(req, res) {
 
-	 var link = req.param.url;
-	 var feedname = req.param.feedname;
+	 var link = req.query.url;
+	 var feedname = req.query.feedname;
 	console.log(req.param, req, link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
@@ -216,7 +216,7 @@ app.get('/',cors(),function(req, res) {
 
 app.get('/first',cors(),function(req, res) {
 
-	 var user_id = req.param.id;
+	 var user_id = req.query.id;
 	console.log(req.param, req, user_id, req.param.id);
 
 
