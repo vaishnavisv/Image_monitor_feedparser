@@ -252,6 +252,7 @@ getFeed (urlTestFeed, function (err, feedItems) {
 
 
 function getFeed (urlfeed, callback) {
+	console.log(urlfeed);
 	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
