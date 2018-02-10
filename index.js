@@ -205,7 +205,7 @@ app.get('/',cors(),function(req, res) {
 
 	 var link = req.query.url;
 	 var feedname = req.query.feedname;
-	console.log(req.param, req, link, feedname);
+	console.log("query params but in root", link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
 	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
@@ -216,15 +216,18 @@ app.get('/',cors(),function(req, res) {
 
 app.get('/first',cors(),function(req, res) {
 
-	 var user_id = req.query.id;
-	console.log(req.param, req, user_id, req.param.id);
+	 //var user_id = req.query.id;
+	console.log("query params from /first", req.param, req.query);
 
 
 
 
 
-urlTestFeed = user_id;
-getFeed (urlTestFeed, function (err, feedItems) {
+
+getFeed (req.query.id, function (err, feedItems) {
+	if(err){
+		console.log("Some grave error", error);
+	}
 	if (!err) {
 		function pad (num) { 
 			var s = num.toString (), ctplaces = 3;
