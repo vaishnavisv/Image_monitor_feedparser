@@ -3,7 +3,11 @@ const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
+<<<<<<< HEAD
 const FeedParser = require ("feedparser");
+=======
+var FeedParser = require('feedparser');
+>>>>>>> 0295e9a834fc112544cdebc28caf2a5abc633bc4
 // Load the full build.
 var _ = require('lodash');
 // Load the core build.
@@ -27,7 +31,7 @@ var curryN = require('lodash/fp/curryN');
 
 //for (var k in envConfig) {
  // process.env[k] = envConfig[k]
-  //console.log(process.env[k]);
+  //console.log(process.env[k]); 
 //}
 
 //var CONFIG = require('../config.json');
@@ -39,6 +43,7 @@ var dbpassword= CONFIG.dbpassword;
 var dbuserDB=CONFIG.dbuserDB;
 var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
+<<<<<<< HEAD
 var dbprotocol = process.env.protocol;
 //console.log(dbprotocol);
 var domain=process.env.host;
@@ -50,6 +55,19 @@ var port=process.env.feedparserport;
 
 
 
+=======
+var dbprotocol = process.env.dbprotocol;
+console.log(dbprotocol);
+var clienturl=process.env.clienturl;
+console.log(clienturl);
+var clienturlwithprotocol=dbprotocol + clienturl;
+console.log(clienturlwithprotocol);
+//var port=process.env.feedParserServiceUrl;
+//console.log(port);
+var port=process.env.feedParserPort;
+console.log(port);
+	
+>>>>>>> 0295e9a834fc112544cdebc28caf2a5abc633bc4
 
 
 /*  The MIT License (MIT)
@@ -73,24 +91,20 @@ var port=process.env.feedparserport;
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-	var whitelist = [domain]
-	var corsOptions = {
-	  origin: function (origin, callback) {
-	    if (whitelist.indexOf(origin) !== -1) {
-	      callback(null, true)
-	    } else {
-	      callback(new Error('Not allowed by CORS'))
-	    }
-	  }
-	}
-	app.use(cors())
+	
 
 
 
 //connecting to couch db
 const request = require ("request");
-var url = 'http://localhost:5984/'
-var db = 'feeds'
+var dbprotocol=process.env.dbprotocol;
+var dbhost=process.env.dbhost;
+var dbport=process.env.dbPort;
+var url = dbprotocol+dbhost;
+
+var db = process.env.feeddbname;
+
+console.log("urls",url,db)
 var urlTestFeed;
 
 var linkarray=[];
@@ -128,14 +142,22 @@ function pullFeedsOnTime(link,feedname,res) {
 				}
 				//console.log(feedItems);
 				//Get the feeds from the database 
-			request(url + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				console.log("inside url",url+db+'/_all_docs?include_docs=true')
+			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				console.log("bodu",body);
 				parsedFeeds = JSON.parse(body);
+
 				//console.log(body);
 				feedsarray = parsedFeeds.rows;
 
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
 				if(feedsarray.length != 0){
+
+				//feedsarray = parsedFeeds.rows;
+				//Pass the feeds from the database to compare if the
+				//feeds from newsrack are already present
+
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
 				  unionFeeds.map(feed=>{
@@ -190,13 +212,26 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	
 }
-
+app.use(function(req, res, next) {
+  //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
+  var allowedOrigins=clienturlwithprotocol;
+  var origin = req.headers.origin;
+  if(allowedOrigins.indexOf(origin) > -1){
+       res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  //res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:8020');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', true);
+  return next();
+}); 
 
 //Pull feeds on time inteval
 /*app.get('/',cors(),function(req, res) {
 
-	 var link = req.param('url');
-	 var feedname = req.param('feedname');
+	 var link = req.query.url;
+	 var feedname = req.query.feedname;
+	console.log("query params but in root", link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
 	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
@@ -207,15 +242,18 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 app.get('/first',cors(),function(req, res) {
 
-	 var user_id = req.param('id');
+	 //var user_id = req.query.id;
+	console.log("query params from /first", req.param, req.query);
 
 
 
 
 
 
-urlTestFeed = user_id;
-getFeed (urlTestFeed, function (err, feedItems) {
+getFeed (req.query.id, function (err, feedItems) {
+	if(err){
+		console.log("Some grave error", error);
+	}
 	if (!err) {
 		function pad (num) { 
 			var s = num.toString (), ctplaces = 3;
@@ -244,6 +282,7 @@ getFeed (urlTestFeed, function (err, feedItems) {
 
 
 function getFeed (urlfeed, callback) {
+	console.log(urlfeed);
 	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
