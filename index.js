@@ -3,11 +3,9 @@ const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
-<<<<<<< HEAD
+
 const FeedParser = require ("feedparser");
-=======
-var FeedParser = require('feedparser');
->>>>>>> 0295e9a834fc112544cdebc28caf2a5abc633bc4
+
 // Load the full build.
 var _ = require('lodash');
 // Load the core build.
@@ -43,19 +41,7 @@ var dbpassword= CONFIG.dbpassword;
 var dbuserDB=CONFIG.dbuserDB;
 var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
-<<<<<<< HEAD
-var dbprotocol = process.env.protocol;
-//console.log(dbprotocol);
-var domain=process.env.host;
-//console.log(domain);
-var couchdbdomain=dbprotocol + domain;
-//console.log(couchdbdomain);
-var port=process.env.feedparserport;
-//console.log(port);
 
-
-
-=======
 var dbprotocol = process.env.dbprotocol;
 console.log(dbprotocol);
 var clienturl=process.env.clienturl;
@@ -67,7 +53,7 @@ console.log(clienturlwithprotocol);
 var port=process.env.feedParserPort;
 console.log(port);
 	
->>>>>>> 0295e9a834fc112544cdebc28caf2a5abc633bc4
+
 
 
 /*  The MIT License (MIT)
