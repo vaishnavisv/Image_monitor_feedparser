@@ -3,7 +3,7 @@ const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
-
+const FeedParser = require ("feedparser");
 // Load the full build.
 var _ = require('lodash');
 // Load the core build.
@@ -40,13 +40,13 @@ var dbuserDB=CONFIG.dbuserDB;
 var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
 var dbprotocol = process.env.protocol;
-console.log(dbprotocol);
+//console.log(dbprotocol);
 var domain=process.env.host;
-console.log(domain);
+//console.log(domain);
 var couchdbdomain=dbprotocol + domain;
-console.log(couchdbdomain);
+//console.log(couchdbdomain);
 var port=process.env.feedparserport;
-console.log(port);
+//console.log(port);
 
 
 
@@ -130,9 +130,12 @@ function pullFeedsOnTime(link,feedname,res) {
 				//Get the feeds from the database 
 			request(url + db + '/_all_docs?include_docs=true', function(err, res, body) {
 				parsedFeeds = JSON.parse(body);
+				//console.log(body);
 				feedsarray = parsedFeeds.rows;
+
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
+				if(feedsarray.length != 0){
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
 				  unionFeeds.map(feed=>{
@@ -146,7 +149,7 @@ function pullFeedsOnTime(link,feedname,res) {
 					    console.log(err,body);
 					});
 				});
-
+				}	  
 			});
 
 				
@@ -190,7 +193,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 
 //Pull feeds on time inteval
-app.get('/',cors(),function(req, res) {
+/*app.get('/',cors(),function(req, res) {
 
 	 var link = req.param('url');
 	 var feedname = req.param('feedname');
@@ -198,7 +201,7 @@ app.get('/',cors(),function(req, res) {
 	pullFeedsOnTime(link,feedname,res)
 	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
 
-});
+});*/
 
 
 
@@ -296,4 +299,4 @@ console.log ("\n" + myProductName + " v" + myVersion + ".\n");
 
 
 
-app.listen(port, () => console.log('Example app listening on port '))
+app.listen(3000, () => console.log('Example app listening on port '))
