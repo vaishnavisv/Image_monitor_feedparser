@@ -3,7 +3,9 @@ const app = express();
 var cors = require('cors')
 var myProductName = "feedParserDemo"; myVersion = "0.4.3";
 
-var FeedParser = require('feedparser');
+
+const FeedParser = require ("feedparser");
+
 // Load the full build.
 var _ = require('lodash');
 // Load the core build.
@@ -39,6 +41,7 @@ var dbpassword= CONFIG.dbpassword;
 var dbuserDB=CONFIG.dbuserDB;
 var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
+
 var dbprotocol = process.env.dbprotocol;
 console.log(dbprotocol);
 var clienturl=process.env.clienturl;
@@ -50,6 +53,7 @@ console.log(clienturlwithprotocol);
 var port=process.env.feedParserPort;
 console.log(port);
 	
+
 
 
 /*  The MIT License (MIT)
@@ -128,10 +132,18 @@ function pullFeedsOnTime(link,feedname,res) {
 			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
 				console.log("bodu",body);
 				parsedFeeds = JSON.parse(body);
+
+				//console.log(body);
+				feedsarray = parsedFeeds.rows;
+
+				//Pass the feeds from the database to compare if the
+				//feeds from newsrack are already present
+				if(feedsarray.length != 0){
+
 				//feedsarray = parsedFeeds.rows;
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
-				
+
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
 				  unionFeeds.map(feed=>{
@@ -145,7 +157,7 @@ function pullFeedsOnTime(link,feedname,res) {
 					    console.log(err,body);
 					});
 				});
-
+				}	  
 			});
 
 				
@@ -201,29 +213,33 @@ app.use(function(req, res, next) {
 }); 
 
 //Pull feeds on time inteval
-app.get('/',cors(),function(req, res) {
+/*app.get('/',cors(),function(req, res) {
 
-	 var link = req.param('url');
-	 var feedname = req.param('feedname');
+	 var link = req.query.url;
+	 var feedname = req.query.feedname;
+	console.log("query params but in root", link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
 	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
 
-});
+});*/
 
 
 
 app.get('/first',cors(),function(req, res) {
 
-	 var user_id = req.param('id');
+	 //var user_id = req.query.id;
+	console.log("query params from /first", req.param, req.query);
 
 
 
 
 
 
-urlTestFeed = user_id;
-getFeed (urlTestFeed, function (err, feedItems) {
+getFeed (req.query.id, function (err, feedItems) {
+	if(err){
+		console.log("Some grave error", error);
+	}
 	if (!err) {
 		function pad (num) { 
 			var s = num.toString (), ctplaces = 3;
@@ -252,6 +268,7 @@ getFeed (urlTestFeed, function (err, feedItems) {
 
 
 function getFeed (urlfeed, callback) {
+	console.log(urlfeed);
 	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
@@ -307,4 +324,4 @@ console.log ("\n" + myProductName + " v" + myVersion + ".\n");
 
 
 
-app.listen(port, () => console.log('Example app listening on port '))
+app.listen(3000, () => console.log('Example app listening on port '))
