@@ -43,15 +43,15 @@ var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
 */
 
 var dbprotocol = process.env.dbprotocol;
-console.log(dbprotocol);
+//console.log(dbprotocol);
 var clienturl=process.env.clienturl;
-console.log(clienturl);
+//console.log(clienturl);
 var clienturlwithprotocol=dbprotocol + clienturl;
-console.log(clienturlwithprotocol);
+//console.log(clienturlwithprotocol);
 //var port=process.env.feedParserServiceUrl;
 //console.log(port);
 var port=process.env.feedParserPort;
-console.log(port);
+//console.log(port);
 	
 
 
@@ -86,11 +86,11 @@ const request = require ("request");
 var dbprotocol=process.env.dbprotocol;
 var dbhost=process.env.dbhost;
 var dbport=process.env.dbPort;
-var url = dbprotocol+dbhost;
-
-var db = process.env.feeddbname;
-
-console.log("urls",url,db)
+//var url = dbprotocol+dbhost;
+var url = 'http://localhost:5984';
+//var db = process.env.feeddbname;
+var db = 'feeds';
+//console.log("urls",url,db)
 var urlTestFeed;
 
 var linkarray=[];
@@ -120,7 +120,7 @@ function pullFeedsOnTime(link,feedname,res) {
 					}
 					return (s);
 				}
-			console.log ("There are " + feedItems.length + " items in the feed.\n");
+			//console.log ("There are " + feedItems.length + " items in the feed.\n");
 				//res.send(feedItems);
 				for (var i = 0; i < feedItems.length; i++) {
 					//console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
@@ -128,9 +128,9 @@ function pullFeedsOnTime(link,feedname,res) {
 				}
 				//console.log(feedItems);
 				//Get the feeds from the database 
-				console.log("inside url",url+db+'/_all_docs?include_docs=true')
+				//console.log("inside url",url+'/'+db+'/_all_docs?include_docs=true')
 			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
-				console.log("bodu",body);
+				//console.log("bodu",err);
 				parsedFeeds = JSON.parse(body);
 
 				//console.log(body);
@@ -146,17 +146,19 @@ function pullFeedsOnTime(link,feedname,res) {
 
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
+				if(unionFeeds != undefined){
 				  unionFeeds.map(feed=>{
 				  	feed.feednme = feedname;
 					request.post({
-					    url: url + db,
+					    url: url +'/'+ db,
 					    body: feed,
 					    json: true,
 					  }, function(err, resp, body) {
 					  
 					    console.log(err,body);
 					});
-				});
+				  });
+				}
 				}	  
 			});
 
@@ -188,7 +190,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	var res = _.differenceBy(feedItems,databasefeeds,'title');
 	for (var i = 0; i < res.length; i++) {
-		console.log("every result",res[i].title);
+		//console.log("every result",res[i].title);
 	}
 	console.log("result",res.length)
 	
@@ -200,7 +202,8 @@ function differenceOfFeeds(feedsarray,feedItems) {
 }
 app.use(function(req, res, next) {
   //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
-  var allowedOrigins=clienturlwithprotocol;
+ 	//console.log(clienturlwithprotocol);
+  var allowedOrigins='localhost:3000';
   var origin = req.headers.origin;
   if(allowedOrigins.indexOf(origin) > -1){
        res.setHeader('Access-Control-Allow-Origin', origin);
@@ -213,23 +216,23 @@ app.use(function(req, res, next) {
 }); 
 
 //Pull feeds on time inteval
-/*app.get('/',cors(),function(req, res) {
+app.get('/',cors(),function(req, res) {
 
 	 var link = req.query.url;
 	 var feedname = req.query.feedname;
-	console.log("query params but in root", link, feedname);
+	//console.log("query params but in root", link, feedname);
 	res.end();
 	pullFeedsOnTime(link,feedname,res)
-	setInterval(pullFeedsOnTime,3600000,link,feedname,res); 
+	//setInterval(pullFeedsOnTime,360000000,link,feedname,res); 
 
-});*/
+});
 
 
 
 app.get('/first',cors(),function(req, res) {
 
 	 //var user_id = req.query.id;
-	console.log("query params from /first", req.param, req.query);
+	//console.log("query params from /first", req.param, req.query);
 
 
 
@@ -238,7 +241,8 @@ app.get('/first',cors(),function(req, res) {
 
 getFeed (req.query.id, function (err, feedItems) {
 	if(err){
-		console.log("Some grave error", error);
+		//res.send(err);
+		console.log("Some grave error", err);
 	}
 	if (!err) {
 		function pad (num) { 
@@ -265,10 +269,37 @@ getFeed (req.query.id, function (err, feedItems) {
   
 });
 
+//get range to filter feeds
+
+/*app.get('/range',cors(),function(req, res) {
+	console.log(req.query.from,req.query.link)
+	getFeed (req.query.link, function (err, feedItems) {
+		if(err){
+			console.log("Some grave error", error);
+		}
+		if (!err) {
+			function pad (num) { 
+				var s = num.toString (), ctplaces = 3;
+				while (s.length < ctplaces) {
+				s = "0" + s;
+				}
+				return (s);
+			}
+		//console.log ("There are " + feedItems.length + " items in the feed.\n");
+			
+			for (var i = 0; i < feedItems.length; i++) {
+				console.log(feedItems[i].date);	
+			}
+			
+		}
+	});
+
+});*/
+
 
 
 function getFeed (urlfeed, callback) {
-	console.log(urlfeed);
+	//console.log(urlfeed);
 	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
@@ -321,7 +352,5 @@ console.log ("\n" + myProductName + " v" + myVersion + ".\n");
 			
 		}
 	});*/
-
-
 
 app.listen(3000, () => console.log('Example app listening on port '))
