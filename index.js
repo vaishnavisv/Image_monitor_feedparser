@@ -47,7 +47,7 @@ var clienturlwithprotocol=dbprotocol + clienturl;
 //console.log(clienturlwithprotocol);
 //var port=process.env.feedParserServiceUrl;
 //console.log(port);
-var port=process.env.feedParserPort || 3000;
+var port=process.env.feedParserPort || 3500;
 
 
 //connecting to couch db
@@ -57,8 +57,7 @@ var dbport=process.env.dbPort;
 var url = dbprotocol+dbhost;
 			//var url = 'http://localhost:5984';//for local testing
 var db = process.env.feeddbname;
-			//var db = 'feeds';//for local testing
-console.log("urls",url,db)
+	//var db ='feeds';
 var urlTestFeed;
 
 var linkarray=[];
@@ -106,7 +105,7 @@ var db = 'feeds';*/
 
 
 
-function pullFeedsOnTime(link,feedname,res) {
+function pullFeedsOnTime(link,feedname) {
 	
 /*request(url + db+'/_design/links/_view/link?group_level=1', function(err, res, body) {
 			parsedBody = JSON.parse(body);
@@ -117,9 +116,9 @@ function pullFeedsOnTime(link,feedname,res) {
 		if(linkarray !== undefined){
 	linkarray.map(key=>{*/
 			//console.log(feedname);
-			urlTestFeed = link;
+			//urlTestFeed = link;
 		
-		getFeed (urlTestFeed, function (err, feedItems) {
+		getFeed (link, function (err, feedItems) {
 			if (!err) {
 				function pad (num) { 
 					var s = num.toString (), ctplaces = 3;
@@ -134,19 +133,23 @@ function pullFeedsOnTime(link,feedname,res) {
 					//console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
 
 				}
-				//console.log(feedItems);
+				
 				//Get the feeds from the database 
 				//console.log("inside url",url+'/'+db+'/_all_docs?include_docs=true')
 			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
+				
+				if(body != undefined){
 
-				parsedFeeds = JSON.parse(body);
-				feedsarray = parsedFeeds.rows;
+				//parsedFeeds = JSON.parse(body);
+				feedsarray = JSON.parse(body).rows;
+								
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
 				
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
-				if(unionFeeds != undefined){
+				//console.log(unionFeeds);
+
 				  unionFeeds.map(feed=>{
 				  	feed.feednme = feedname;
 					request.post({
@@ -154,8 +157,8 @@ function pullFeedsOnTime(link,feedname,res) {
 					    body: feed,
 					    json: true,
 					  }, function(err, resp, body) {
-					  
-					    console.log(err,body);
+					  	return body;
+					    //console.log(err,body);
 					});
 
 				  });
@@ -193,7 +196,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 	for (var i = 0; i < res.length; i++) {
 		//console.log("every result",res[i].title);
 	}
-	console.log("result",res.length)
+	//console.log("result",res.length)
 	
 	return res;
 
@@ -218,13 +221,10 @@ app.use(function(req, res, next) {
 
 //Pull feeds on time inteval
 app.get('/',cors(),function(req, res) {
-
-
-	 var link = req.query.url;
-	 var feedname = req.query.feedname;
-	//console.log("query params but in root", link, feedname);
-	res.end();
-	pullFeedsOnTime(link,feedname,res)
+	//console.log(req.query.url);
+	var result = pullFeedsOnTime(req.query.url,req.query.feedname);
+	console.log(result);
+	res.send(result);
 	//setInterval(pullFeedsOnTime,360000000,link,feedname,res); 
 
 });
