@@ -55,7 +55,7 @@ const request = require ("request");
 var dbhost=process.env.dbhost;
 var dbport=process.env.dbPort;
 var url = dbprotocol+dbhost;
-			//var url = 'http://localhost:5984';//for local testing
+		//var url = 'http://localhost:5984';//for local testing
 var db = process.env.feeddbname;
 	//var db ='feeds';
 var urlTestFeed;
@@ -154,21 +154,21 @@ function differenceOfFeeds(feedsarray,feedItems) {
 	//var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }];
 	//var res = _.differenceWith(objects, [{'x':2,'y':1},{ 'x': 1, 'y': 2 }], _.isEqual);
 	var databasefeeds = feedsarray.map(value=>{
+		//
+		delete value.value._id;
+		delete value.value._rev;	
 		//console.log(value);
-		delete value._id;
-		delete value._rev;	
-
-		return value;
+		return value.value;
 
 	});
 
 	
-
+	//console.log(databasefeeds);
 	var res = _.differenceBy(feedItems,databasefeeds,'title');
 	for (var i = 0; i < res.length; i++) {
 		//console.log("every result",res[i].title);
 	}
-	//console.log("result",res.length)
+	console.log("result",res.length)
 	
 	return res;
 
