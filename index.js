@@ -106,38 +106,14 @@ var db = 'feeds';*/
 
 
 function pullFeedsOnTime(link,feedname) {
-	
-/*request(url + db+'/_design/links/_view/link?group_level=1', function(err, res, body) {
-			parsedBody = JSON.parse(body);
-			
 
-		linkarray = parsedBody.rows;
-		console.log(linkarray)
-		if(linkarray !== undefined){
-	linkarray.map(key=>{*/
-			//console.log(feedname);
-			//urlTestFeed = link;
-		
-		getFeed (link, function (err, feedItems) {
+		//Get the feeds of the link
+		 getFeed (link, function (err, feedItems) {
+
 			if (!err) {
-				function pad (num) { 
-					var s = num.toString (), ctplaces = 3;
-					while (s.length < ctplaces) {
-					s = "0" + s;
-					}
-					return (s);
-				}
-			//console.log ("There are " + feedItems.length + " items in the feed.\n");
-				//res.send(feedItems);
-				for (var i = 0; i < feedItems.length; i++) {
-					//console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
-
-				}
-				
-				//Get the feeds from the database 
-				//console.log("inside url",url+'/'+db+'/_all_docs?include_docs=true')
-			request(url+'/' + db + '/_all_docs?include_docs=true', function(err, res, body) {
-				
+				//get all the feeds in the feeds database
+			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key='+'"'+feedname+'"', function(err, res, body) {
+				//console.log(body);
 				if(body != undefined){
 
 				//parsedFeeds = JSON.parse(body);
@@ -145,7 +121,7 @@ function pullFeedsOnTime(link,feedname) {
 								
 				//Pass the feeds from the database to compare if the
 				//feeds from newsrack are already present
-				
+				//console.log(feedsarray);
 				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
 				//add the feeds which are not in the database to the database
 				//console.log(unionFeeds);
@@ -170,11 +146,7 @@ function pullFeedsOnTime(link,feedname) {
 				
 			}
 		});
-	//});
-   //}
-
-   		
-  //});
+	
 }
 
 function differenceOfFeeds(feedsarray,feedItems) {
@@ -182,11 +154,11 @@ function differenceOfFeeds(feedsarray,feedItems) {
 	//var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }];
 	//var res = _.differenceWith(objects, [{'x':2,'y':1},{ 'x': 1, 'y': 2 }], _.isEqual);
 	var databasefeeds = feedsarray.map(value=>{
+		//console.log(value);
+		delete value._id;
+		delete value._rev;	
 
-		delete value.doc._id;
-		delete value.doc._rev;	
-
-		return value.doc;
+		return value;
 
 	});
 
@@ -223,7 +195,7 @@ app.use(function(req, res, next) {
 app.get('/',cors(),function(req, res) {
 	//console.log(req.query.url);
 	var result = pullFeedsOnTime(req.query.url,req.query.feedname);
-	console.log(result);
+	//console.log(result);
 	res.send(result);
 	//setInterval(pullFeedsOnTime,360000000,link,feedname,res); 
 
