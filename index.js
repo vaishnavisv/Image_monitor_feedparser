@@ -35,16 +35,16 @@ var dbhost=process.env.dbhost;
 //Import database port like 5984 for couchdb in local (localhost:5984)
 var dbport=process.env.dbPort;
 //Import database username and password from the environment
-//var dbusername = process.env.dbuser //for production environment
-var dbusername = 'admin';//for development environment
-//var dbpassword = process.env.dbpassword //for production environment
-var dbpassword = 'admin';//for development environment
+var dbusername = process.env.dbuser //for production environment
+//var dbusername = '';//for development environment
+var dbpassword = process.env.dbpassword //for production environment
+//var dbpassword = 'admin';//for development environment
 //The complete url of database host with protocol
-//var url = dbprotocol+dbhost; //for production environment
-	var url = 'http://192.168.1.12:5984';//for development environment
+var url = dbprotocol+dbhost; //for production environment
+	//var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
-//var db = process.env.feeddbname; //for production environment
-	var db ='feeds';//for development environment
+var db = process.env.feeddbname; //for production environment
+	//var db ='feeds_new';//for development environment
 
 
 
