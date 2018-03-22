@@ -1,8 +1,7 @@
 const express = require('express')
 const app = express();
 var cors = require('cors')
-var myProductName = "feedParserDemo"; myVersion = "0.4.3";
-
+//Import feed parser to parse the xml feeds to json
 var FeedParser = require('feedparser');
 // Load the full build.
 var _ = require('lodash');
@@ -18,51 +17,36 @@ var object = require('lodash/fp/object');
 // Cherry-pick methods for smaller browserify/rollup/webpack bundles.
 var at = require('lodash/at');
 var curryN = require('lodash/fp/curryN');
-
-//const dotenv = require('dotenv')
-//const fs = require('fs')
-//const envConfig = dotenv.parse(fs.readFileSync('./variables.env'))
- 
-
-
-//for (var k in envConfig) {
- // process.env[k] = envConfig[k]
-  //console.log(process.env[k]); 
-//}
-
-//var CONFIG = require('../config.json');
-/*
-var dbprotocol = CONFIG.dbprotocol;
-var dbhost = CONFIG.dbhost;
-var dbuser = CONFIG.dbuser;
-var dbpassword= CONFIG.dbpassword;
-var dbuserDB=CONFIG.dbuserDB;
-var dbcouchAuthDB=CONFIG.dbcouchAuthDB;
-*/
+//Import and add btoa 
+var btoa = require('btoa');
+//Import and add cron 
+var cron = require('cron');
+//Import request to make http requests
+const request = require ("request");
+//Import db protocol from environment and store in variable
 var dbprotocol = process.env.dbprotocol;
-//console.log(dbprotocol);
-var clienturl=process.env.clienturl;
-//console.log(clienturl);
-var clienturlwithprotocol=dbprotocol + clienturl;
-//console.log(clienturlwithprotocol);
-//var port=process.env.feedParserServiceUrl;
-//console.log(port);
+//Import db port of feedparser service from environment and store in variable
 var port=process.env.feedParserPort || 3500;
 
 
 //connecting to couch db
-const request = require ("request");
+//Import database host like 'mmcouch.test.openrun.net'
 var dbhost=process.env.dbhost;
+//Import database port like 5984 for couchdb in local (localhost:5984)
 var dbport=process.env.dbPort;
-var url = dbprotocol+dbhost;
-		//var url = 'http://localhost:5984';//for local testing
-var db = process.env.feeddbname;
-	//var db ='feeds';
-var urlTestFeed;
+//Import database username and password from the environment
+//var dbusername = process.env.dbuser //for production environment
+var dbusername = 'admin';//for development environment
+//var dbpassword = process.env.dbpassword //for production environment
+var dbpassword = 'admin';//for development environment
+//The complete url of database host with protocol
+//var url = dbprotocol+dbhost; //for production environment
+	var url = 'http://192.168.1.12:5984';//for development environment
+//Import database feeds from environment variable
+//var db = process.env.feeddbname; //for production environment
+	var db ='feeds';//for development environment
 
-var linkarray=[];
-var feedsarray=[];
-var unionFeeds=[];
+
 
 
 /*  The MIT License (MIT)
@@ -86,73 +70,95 @@ var unionFeeds=[];
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-	
+//testing cron
+/*var job1 = new cron.CronJob({
+  cronTime: '* * * * *',
+  onTick: function() {
+    console.log('job 1 ticked');
+  },
+  start: false
+});
+job1.start(); // job 1 started
+
+console.log('job1 status', job1.running);*/
+
+//Get all user's subscription links and check for the last 	
+function getUsersSubscriptionsLinks(user,callback){
+	//options to get the user subsrciptions from the user's database
+	const options = {
+	  method: 'GET',
+	  uri: user+'/_all_docs?include_docs=true',
+	  headers: {
+	    'Content-Type': 'application/json',
+	    'Authorization': 'Basic '+btoa(dbusername+':'+dbpassword)
+	  }
+	}
+	//Get the user subscriptions from the user database 
+	request(options, function(err, res, body) {
+	  if(body != undefined){
+		//Parse the result to json and store the user's link in an array
+		JSON.parse(body).rows.map(user=>{
+			//Get feeds from the db by passing the feedname 
+			getfeedsFromdb(user.doc.feedname,function(err,feedsFromDb){
+				user.doc.metadata.map(userlink=>{
+					//Get feeds from the newsrack by passing the link as parameter
+					getFeed (userlink.link, function (err, feedItems) {
+						if (!err) {
+							var feedstoUpdate = differenceOfFeeds(feedsFromDb,feedItems);
+							if(feedstoUpdate.length != 0){
+								updateDB(feedstoUpdate,user.doc.feedname,function(err,response){
+									if(response){
+										callback(undefined,true);
+									}
+								})
+							}
+							callback(undefined,false);	
+						}
+					});
+				})
+			});
+		});
+	  }	
+	});
+
+}
 
 
 
 
-//connecting to couch db
-/*const request = require ("request");
-var dbprotocol=process.env.dbprotocol;
-var dbhost=process.env.dbhost;
-var dbport=process.env.dbPort;
-//var url = dbprotocol+dbhost;
-var url = 'http://localhost:5984';
-//var db = process.env.feeddbname;
-var db = 'feeds';*/
-//console.log("urls",url,db)
 
 
 
+function getfeedsFromdb(feedname,callback) {
 
-function pullFeedsOnTime(link,feedname) {
-
-		//Get the feeds of the link
-		 getFeed (link, function (err, feedItems) {
-
-			if (!err) {
-				//get all the feeds in the feeds database
 			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key='+'"'+feedname+'"', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
-
-				//parsedFeeds = JSON.parse(body);
-				feedsarray = JSON.parse(body).rows;
-								
-				//Pass the feeds from the database to compare if the
-				//feeds from newsrack are already present
-				//console.log(feedsarray);
-				unionFeeds = differenceOfFeeds(feedsarray,feedItems);
-				//add the feeds which are not in the database to the database
-				//console.log(unionFeeds);
-
-				  unionFeeds.map(feed=>{
-				  	feed.feednme = feedname;
-					request.post({
-					    url: url +'/'+ db,
-					    body: feed,
-					    json: true,
-					  }, function(err, resp, body) {
-					  	return body;
-					    //console.log(err,body);
-					});
-
-				  });
+					callback(undefined,JSON.parse(body).rows);				
 				}
 					  
 			});
-
-				
-				
-			}
-		});
-	
 }
+//Function to update the database
+function updateDB(data,feedname,callback){
+	//console.log(data);
+	  data.map(feed=>{
+	  	feed.feednme = feedname;
+		request.post({
+		    url: url +'/'+ db,
+		    body: feed,
+		    json: true,
+		  }, function(err, resp, body) {
+		  	callback(undefined,body);
+		    //console.log(err,body);
+		});
 
+	  });
+
+}
+//Function to get the difference feeds from the feeds array from database and feeds array from newsrack
 function differenceOfFeeds(feedsarray,feedItems) {
-	//console.log("feeds",feedItems[0].title,feedsarray[0].doc.title); 
-	//var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }];
-	//var res = _.differenceWith(objects, [{'x':2,'y':1},{ 'x': 1, 'y': 2 }], _.isEqual);
+
 	var databasefeeds = feedsarray.map(value=>{
 		//
 		delete value.value._id;
@@ -161,14 +167,8 @@ function differenceOfFeeds(feedsarray,feedItems) {
 		return value.value;
 
 	});
-
-	
-	//console.log(databasefeeds);
 	var res = _.differenceBy(feedItems,databasefeeds,'title');
-	for (var i = 0; i < res.length; i++) {
-		//console.log("every result",res[i].title);
-	}
-	console.log("result",res.length)
+	//console.log("result",res.length)
 	
 	return res;
 
@@ -176,6 +176,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	
 }
+//cors settings
 app.use(function(req, res, next) {
   //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
  	//console.log(clienturlwithprotocol);
@@ -193,86 +194,44 @@ app.use(function(req, res, next) {
 
 //Pull feeds on time inteval
 app.get('/',cors(),function(req, res) {
-	//console.log(req.query.url);
-	var result = pullFeedsOnTime(req.query.url,req.query.feedname);
-	//console.log(result);
-	res.send(result);
-	//setInterval(pullFeedsOnTime,360000000,link,feedname,res); 
+	var syncStatus = false;
+	getUsersSubscriptionsLinks(req.query.user,function(err,response){
+		if(response==true){
+			syncStatus = true;
+		}
+		else if(response == false){
+			syncStatus = false;
+		}
+	}); 
+	console.log(syncStatus);
+	if(syncStatus == false){
+		res.writeHead(304, { 'Content-Type': 'text/plain' });
+		res.end('ok');
+	}
+	if(syncStatus == true){
+		res.writeHead(201, { 'Content-Type': 'text/plain' });
+		res.end('ok');	
+	}
 
 });
 
 
-
+//Fetch the feeds when user adds a new link
 app.get('/first',cors(),function(req, res) {
-
-
-	 var user_id = req.param('id');
-	 urlTestFeed = user_id;
-
-
-
-
-
-
-getFeed (req.query.id, function (err, feedItems) {
-	if(err){
-		//res.send(err);
-		console.log("Some grave error", err);
-	}
-	if (!err) {
-		function pad (num) { 
-			var s = num.toString (), ctplaces = 3;
-			while (s.length < ctplaces) {
-			s = "0" + s;
-			}
-			return (s);
-		}
-	console.log ("There are " + feedItems.length + " items in the feed.\n");
-		res.send(feedItems);
-		for (var i = 0; i < feedItems.length; i++) {
-			console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
-
-		}
-		
-		
-	}
-});
-
-
-
-	
-  
-});
-
-//get range to filter feeds
-
-/*app.get('/range',cors(),function(req, res) {
-	console.log(req.query.from,req.query.link)
-	getFeed (req.query.link, function (err, feedItems) {
+	getFeed (req.query.id, function (err, feedItems) {
 		if(err){
-			console.log("Some grave error", error);
+			//res.send(err);
+		console.log("Some grave error", err);
 		}
 		if (!err) {
-			function pad (num) { 
-				var s = num.toString (), ctplaces = 3;
-				while (s.length < ctplaces) {
-				s = "0" + s;
-				}
-				return (s);
-			}
-		//console.log ("There are " + feedItems.length + " items in the feed.\n");
-			
-			for (var i = 0; i < feedItems.length; i++) {
-				console.log(feedItems[i].date);	
-			}
-			
+			console.log ("There are " + feedItems.length + " items in the feed.\n");
+			res.send(feedItems);
 		}
 	});
-
-});*/
-
+});
 
 
+//Function to get the parsed json feeds from an xml
 function getFeed (urlfeed, callback) {
 
 	var req = request (urlfeed);
@@ -306,29 +265,6 @@ function getFeed (urlfeed, callback) {
 		callback (err);
 		});
 	}
-
-console.log ("\n" + myProductName + " v" + myVersion + ".\n"); 
-/*getFeed (urlTestFeed, function (err, feedItems) {
-	if (!err) {
-		function pad (num) { 
-			var s = num.toString (), ctplaces = 3;
-			while (s.length < ctplaces) {
-				s = "0" + s;
-				}
-			return (s);
-			}
-		console.log ("There are " + feedItems.length + " items in the feed.\n");
-			res.send(feedItems);
-			for (var i = 0; i < feedItems.length; i++) {
-				console.log ("Item #" + pad (i) + ": " + feedItems [i].title + ".\n");
-
-			}
-			
-			
-		}
-	});*/
-
-
 
 
 app.listen(port, () => console.log('Example app listening on port '))
