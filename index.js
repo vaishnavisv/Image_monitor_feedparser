@@ -20,7 +20,7 @@ var curryN = require('lodash/fp/curryN');
 //Import and add btoa 
 var btoa = require('btoa');
 //Import and add cron 
-var cron = require('cron');
+//var cron = require('cron');
 //Import request to make http requests
 const request = require ("request");
 //Import db protocol from environment and store in variable
@@ -31,20 +31,20 @@ var port=process.env.feedParserPort || 3500;
 
 //connecting to couch db
 //Import database host like 'mmcouch.test.openrun.net'
-var dbhost=process.env.dbhost;
+//var dbhost=process.env.dbhost;
 //Import database port like 5984 for couchdb in local (localhost:5984)
-var dbport=process.env.dbPort;
+//var dbport=process.env.dbPort;
 //Import database username and password from the environment
-var dbusername = process.env.dbuser //for production environment
-//var dbusername = '';//for development environment
-var dbpassword = process.env.dbpassword //for production environment
-//var dbpassword = 'admin';//for development environment
+//var dbusername = process.env.dbuser //for production environment
+var dbusername = 'admin';//for development environment
+//var dbpassword = process.env.dbpassword //for production environment
+var dbpassword = 'admin';//for development environment
 //The complete url of database host with protocol
-var url = dbprotocol+dbhost; //for production environment
-	//var url = 'http://localhost:5984';//for development environment
+//var url = dbprotocol+dbhost; //for production environment
+	var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
-var db = process.env.feeddbname; //for production environment
-	//var db ='feeds_new';//for development environment
+//var db = process.env.feeddbname; //for production environment
+	var db ='feeds';//for development environment
 
 
 
@@ -100,12 +100,19 @@ function getUsersSubscriptionsLinks(user,callback){
 		JSON.parse(body).rows.map(user=>{
 			//Get feeds from the db by passing the feedname 
 			getfeedsFromdb(user.doc.feedname,function(err,feedsFromDb){
+				//Handle if feedsfromdb is empty when user subscribing to a new link
+				//console.log(feedsFromDb);
+			  if(feedsFromDb!=undefined){
+
 				user.doc.metadata.map(userlink=>{
+					//console.log(userlink.link);
 					//Get feeds from the newsrack by passing the link as parameter
 					getFeed (userlink.link, function (err, feedItems) {
+						//console.log(err);
 						if (!err) {
 							var feedstoUpdate = differenceOfFeeds(feedsFromDb,feedItems);
-							if(feedstoUpdate.length != 0){
+							//console.log("feeds",feedstoUpdate);
+							if(feedstoUpdate.length > 0){
 								updateDB(feedstoUpdate,user.doc.feedname,function(err,response){
 									if(response){
 										callback(undefined,true);
@@ -114,8 +121,12 @@ function getUsersSubscriptionsLinks(user,callback){
 							}
 							callback(undefined,false);	
 						}
+						if(err){
+						callback(undefined,'newsrackerr');
+						}
 					});
 				})
+			 }
 			});
 		});
 	  }	
@@ -168,7 +179,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	});
 	var res = _.differenceBy(feedItems,databasefeeds,'title');
-	//console.log("result",res.length)
+	console.log("result",res.length)
 	
 	return res;
 
@@ -187,23 +198,42 @@ app.use(function(req, res, next) {
   }
   //res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:8020');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'POST');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.header('Access-Control-Allow-Credentials', true);
   return next();
 }); 
-
+//try to save a file locally
+app.post('/', (req, res) => {
+  console.log('Received request');
+  /*fs.writeFile('json.json', JSON.stringify(req.body), (err) => {
+    if (err) throw err;
+    console.log('File written to JSON.json');
+    res.send('File written to JSON.json')
+  })*/
+});
 //Pull feeds on time inteval
 app.get('/',cors(),function(req, res) {
-	var syncStatus = false;
+	var syncStatus=false;
 	getUsersSubscriptionsLinks(req.query.user,function(err,response){
+		//console.log(response);
+
 		if(response==true){
 			syncStatus = true;
+			//console.log(syncStatus)
 		}
 		else if(response == false){
+			
 			syncStatus = false;
+			//console.log(syncStatus)
+		}
+		else if(response == 'newsrackerr'){
+			syncStatus = 'err';
+			//console.log(syncStatus)
 		}
 	}); 
-	console.log(syncStatus);
+	console.log("sync afeter",syncStatus)
 	if(syncStatus == false){
 		res.writeHead(304, { 'Content-Type': 'text/plain' });
 		res.end('ok');
@@ -211,6 +241,11 @@ app.get('/',cors(),function(req, res) {
 	if(syncStatus == true){
 		res.writeHead(201, { 'Content-Type': 'text/plain' });
 		res.end('ok');	
+	}
+	if(syncStatus == 'newsrackerr'){
+		console.log('newsrackerr',syncStatus)
+		res.writeHead(401, { 'Content-Type': 'text/plain' });
+		res.end('ok');
 	}
 
 });
@@ -233,7 +268,7 @@ app.get('/first',cors(),function(req, res) {
 
 //Function to get the parsed json feeds from an xml
 function getFeed (urlfeed, callback) {
-
+	//console.log(urlfeed);
 	var req = request (urlfeed);
 	var feedparser = new FeedParser ();
 	var feedItems = new Array ();
@@ -242,9 +277,11 @@ function getFeed (urlfeed, callback) {
 		if (response.statusCode == 200) {
 			stream.pipe (feedparser);
 			}
+		//console.log(response);
 		});
 	req.on ("error", function (err) {
 		console.log ("getFeed: err.message == " + err.message);
+		callback(err);
 		});
 	feedparser.on ("readable", function () {
 		try {
