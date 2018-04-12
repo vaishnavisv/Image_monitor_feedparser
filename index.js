@@ -35,16 +35,16 @@ var port=process.env.feedParserPort || 3500;
 //Import database port like 5984 for couchdb in local (localhost:5984)
 //var dbport=process.env.dbPort;
 //Import database username and password from the environment
-//var dbusername = process.env.dbuser //for production environment
-var dbusername = 'admin';//for development environment
-//var dbpassword = process.env.dbpassword //for production environment
-var dbpassword = 'admin';//for development environment
+var dbusername = process.env.dbuser; //for production environment
+//var dbusername = '';//for development environment
+var dbpassword = process.env.dbpassword; //for production environment
+//var dbpassword = '';//for development environment
 //The complete url of database host with protocol
-//var url = dbprotocol+dbhost; //for production environment
-	var url = 'http://localhost:5984';//for development environment
+var url = dbprotocol+dbhost; //for production environment
+	//var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
-//var db = process.env.feeddbname; //for production environment
-	var db ='feeds';//for development environment
+var db = process.env.feeddbname; //for production environment
+	//var db ='feeds';//for development environment
 
 
 
@@ -70,17 +70,7 @@ var dbpassword = 'admin';//for development environment
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
-//testing cron
-/*var job1 = new cron.CronJob({
-  cronTime: '* * * * *',
-  onTick: function() {
-    console.log('job 1 ticked');
-  },
-  start: false
-});
-job1.start(); // job 1 started
 
-console.log('job1 status', job1.running);*/
 
 //Get all user's subscription links and check for the last 	
 function getUsersSubscriptionsLinks(user,callback){
@@ -119,11 +109,11 @@ function getUsersSubscriptionsLinks(user,callback){
 									}
 								})
 							}
-							callback(undefined,false);	
+							else{
+								callback(undefined,false);
+							}	
 						}
-						if(err){
-						callback(undefined,'newsrackerr');
-						}
+
 					});
 				})
 			 }
@@ -134,12 +124,7 @@ function getUsersSubscriptionsLinks(user,callback){
 
 }
 
-
-
-
-
-
-
+//Fumction to get feeds from database on feedname
 function getfeedsFromdb(feedname,callback) {
 
 			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key='+'"'+feedname+'"', function(err, res, body) {
@@ -179,7 +164,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 
 	});
 	var res = _.differenceBy(feedItems,databasefeeds,'title');
-	console.log("result",res.length)
+	//console.log("result",res.length)
 	
 	return res;
 
@@ -204,36 +189,23 @@ app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', true);
   return next();
 }); 
-//try to save a file locally
-app.post('/', (req, res) => {
-  console.log('Received request');
-  /*fs.writeFile('json.json', JSON.stringify(req.body), (err) => {
-    if (err) throw err;
-    console.log('File written to JSON.json');
-    res.send('File written to JSON.json')
-  })*/
-});
-//Pull feeds on time inteval
+//Pull new feeds from newsrack
 app.get('/',cors(),function(req, res) {
-	var syncStatus=false;
+	var syncStatus;
 	getUsersSubscriptionsLinks(req.query.user,function(err,response){
 		//console.log(response);
 
 		if(response==true){
 			syncStatus = true;
-			//console.log(syncStatus)
+			console.log("upadted",syncStatus)
 		}
 		else if(response == false){
 			
 			syncStatus = false;
-			//console.log(syncStatus)
-		}
-		else if(response == 'newsrackerr'){
-			syncStatus = 'err';
-			//console.log(syncStatus)
+			console.log("Already uptodate",syncStatus)
 		}
 	}); 
-	console.log("sync afeter",syncStatus)
+	//console.log("sync afeter",syncStatus)
 	if(syncStatus == false){
 		res.writeHead(304, { 'Content-Type': 'text/plain' });
 		res.end('ok');
@@ -241,11 +213,6 @@ app.get('/',cors(),function(req, res) {
 	if(syncStatus == true){
 		res.writeHead(201, { 'Content-Type': 'text/plain' });
 		res.end('ok');	
-	}
-	if(syncStatus == 'newsrackerr'){
-		console.log('newsrackerr',syncStatus)
-		res.writeHead(401, { 'Content-Type': 'text/plain' });
-		res.end('ok');
 	}
 
 });
