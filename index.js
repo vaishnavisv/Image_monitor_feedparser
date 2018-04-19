@@ -31,20 +31,20 @@ var port=process.env.feedParserPort || 3500;
 
 //connecting to couch db
 //Import database host like 'mmcouch.test.openrun.net'
-var dbhost=process.env.dbhost;
+//var dbhost=process.env.dbhost;
 //Import database port like 5984 for couchdb in local (localhost:5984)
-var dbport=process.env.dbPort;
+//var dbport=process.env.dbPort;
 //Import database username and password from the environment
-var dbusername = process.env.dbuser; //for production environment
-//var dbusername = 'admin';//for development environment
-var dbpassword = process.env.dbpassword; //for production environment
-//var dbpassword = 'admin';//for development environment
+//var dbusername = process.env.dbuser; //for production environment
+var dbusername = 'admin';//for development environment
+//var dbpassword = process.env.dbpassword; //for production environment
+var dbpassword = 'admin';//for development environment
 //The complete url of database host with protocol
-var url = dbprotocol+dbhost; //for production environment
-	//var url = 'http://localhost:5984';//for development environment
+//var url = dbprotocol+dbhost; //for production environment
+	var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
-var db = process.env.feeddbname; //for production environment
-	//var db ='feeds';//for development environment
+//var db = process.env.feeddbname; //for production environment
+	var db ='feeds';//for development environment
 
 
 
@@ -84,8 +84,10 @@ function getUsersSubscriptionsLinks(user,callback){
 	  }
 	}
 request(options, function(err, res, body) {
-		if(body != undefined){	
-		if(JSON.parse(body).rows>0){	
+		if(body != undefined){
+		
+		if(JSON.parse(body).rows.length > 0){	
+
 		//Parse the result to json and store the user's link in an array
 		JSON.parse(body).rows.map(user=>{
 			
