@@ -31,14 +31,14 @@ var port=process.env.feedParserPort || 3500;
 
 //connecting to couch db
 //Import database host like 'mmcouch.test.openrun.net'
-//var dbhost=process.env.dbhost;
+var dbhost=process.env.dbhost;
 //Import database port like 5984 for couchdb in local (localhost:5984)
-//var dbport=process.env.dbPort;
+var dbport=process.env.dbPort;
 //Import database username and password from the environment
 var dbusername = process.env.dbuser; //for production environment
-//var dbusername = '';//for development environment
+//var dbusername = 'admin';//for development environment
 var dbpassword = process.env.dbpassword; //for production environment
-//var dbpassword = '';//for development environment
+//var dbpassword = 'admin';//for development environment
 //The complete url of database host with protocol
 var url = dbprotocol+dbhost; //for production environment
 	//var url = 'http://localhost:5984';//for development environment
@@ -83,27 +83,28 @@ function getUsersSubscriptionsLinks(user,callback){
 	    'Authorization': 'Basic '+btoa(dbusername+':'+dbpassword)
 	  }
 	}
-	//Get the user subscriptions from the user database 
-	request(options, function(err, res, body) {
-	  if(body != undefined){
+request(options, function(err, res, body) {
+		if(body != undefined){	
 		//Parse the result to json and store the user's link in an array
 		JSON.parse(body).rows.map(user=>{
-			//Get feeds from the db by passing the feedname 
-			getfeedsFromdb(user.doc.feedname,function(err,feedsFromDb){
-				//Handle if feedsfromdb is empty when user subscribing to a new link
-				//console.log(feedsFromDb);
-			  if(feedsFromDb!=undefined){
-
-				user.doc.metadata.map(userlink=>{
-					//console.log(userlink.link);
-					//Get feeds from the newsrack by passing the link as parameter
+			
+			user.doc.metadata.map(userlink=>{
+				console.log("ca",userlink.categories[0]);
+				//Get feeds from the db by passing the feedname 
+				getfeedsFromdb(userlink.categories[0],function(err,feedsFromDb){
+					
+				  //Check if feeds from database exists
+				  if(feedsFromDb.length>0){
+				  	//Get feeds from the newsrack by passing the link as parameter
 					getFeed (userlink.link, function (err, feedItems) {
-						//console.log(err);
 						if (!err) {
+							
 							var feedstoUpdate = differenceOfFeeds(feedsFromDb,feedItems);
-							//console.log("feeds",feedstoUpdate);
+							
 							if(feedstoUpdate.length > 0){
+								
 								updateDB(feedstoUpdate,user.doc.feedname,function(err,response){
+									console.log(response);
 									if(response){
 										callback(undefined,true);
 									}
@@ -115,19 +116,20 @@ function getUsersSubscriptionsLinks(user,callback){
 						}
 
 					});
+				  }
 				})
-			 }
+			  
+				});
 			});
+	  	}	
 		});
-	  }	
-	});
 
 }
 
 //Fumction to get feeds from database on feedname
 function getfeedsFromdb(feedname,callback) {
 
-			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key='+'"'+feedname+'"', function(err, res, body) {
+			request(url+'/' + db + '/_design/feeds/_view/metacategories?startkey=["'+feedname+'"]&endkey=["'+feedname+'",{}]', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
@@ -154,7 +156,8 @@ function updateDB(data,feedname,callback){
 }
 //Function to get the difference feeds from the feeds array from database and feeds array from newsrack
 function differenceOfFeeds(feedsarray,feedItems) {
-
+		//console.log("feedarr length",feedsarray.length);
+	if(feedsarray.length>0){	
 	var databasefeeds = feedsarray.map(value=>{
 		//
 		delete value.value._id;
@@ -169,7 +172,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 	return res;
 
 
-
+	}
 	
 }
 //cors settings
@@ -193,27 +196,24 @@ app.use(function(req, res, next) {
 app.get('/',cors(),function(req, res) {
 	var syncStatus;
 	getUsersSubscriptionsLinks(req.query.user,function(err,response){
-		//console.log(response);
+		console.log(response);
 
 		if(response==true){
-			syncStatus = true;
-			console.log("upadted",syncStatus)
+			console.log("up",res.headersSent)
+			if(!res.headersSent){
+				res.writeHead(201, { 'Content-Type': 'text/plain' });
+				res.end('ok');
+			}
 		}
 		else if(response == false){
-			
-			syncStatus = false;
-			console.log("Already uptodate",syncStatus)
+			console.log("not up",res.headersSent)
+			if(!res.headersSent){
+				res.writeHead(304, { 'Content-Type': 'text/plain' });
+				res.end('ok');
+			}
 		}
+
 	}); 
-	//console.log("sync afeter",syncStatus)
-	if(syncStatus == false){
-		res.writeHead(304, { 'Content-Type': 'text/plain' });
-		res.end('ok');
-	}
-	if(syncStatus == true){
-		res.writeHead(201, { 'Content-Type': 'text/plain' });
-		res.end('ok');	
-	}
 
 });
 
