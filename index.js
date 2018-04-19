@@ -85,6 +85,7 @@ function getUsersSubscriptionsLinks(user,callback){
 	}
 request(options, function(err, res, body) {
 		if(body != undefined){	
+		if(JSON.parse(body).rows>0){	
 		//Parse the result to json and store the user's link in an array
 		JSON.parse(body).rows.map(user=>{
 			
@@ -122,6 +123,7 @@ request(options, function(err, res, body) {
 				});
 			});
 	  	}	
+	  	}
 		});
 
 }
