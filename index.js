@@ -31,20 +31,20 @@ var port=process.env.feedParserPort || 3500;
 
 //connecting to couch db
 //Import database host like 'mmcouch.test.openrun.net'
-//var dbhost=process.env.dbhost;
+var dbhost=process.env.dbhost;
 //Import database port like 5984 for couchdb in local (localhost:5984)
-//var dbport=process.env.dbPort;
+var dbport=process.env.dbPort;
 //Import database username and password from the environment
-//var dbusername = process.env.dbuser; //for production environment
-var dbusername = 'admin';//for development environment
-//var dbpassword = process.env.dbpassword; //for production environment
-var dbpassword = 'admin';//for development environment
+var dbusername = process.env.dbuser; //for production environment
+//var dbusername = 'admin';//for development environment
+var dbpassword = process.env.dbpassword; //for production environment
+//var dbpassword = 'admin';//for development environment
 //The complete url of database host with protocol
-//var url = dbprotocol+dbhost; //for production environment
-	var url = 'http://localhost:5984';//for development environment
+var url = dbprotocol+dbhost; //for production environment
+	//var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
-//var db = process.env.feeddbname; //for production environment
-	var db ='feeds';//for development environment
+var db = process.env.feeddbname; //for production environment
+	//var db ='feeds';//for development environment
 
 
 
@@ -92,14 +92,22 @@ request(options, function(err, res, body) {
 		JSON.parse(body).rows.map(user=>{
 			
 			user.doc.metadata.map(userlink=>{
-				console.log("ca",userlink.categories[0]);
+				//console.log("all",userlink)
+				//Check if the xml rss link is null
+				if(userlink.xmlurl == null){
+					var feedlink=userlink.link;
+				}	
+				else{
+					feedlink=userlink.xmlurl;
+				}
 				//Get feeds from the db by passing the feedname 
-				getfeedsFromdb(userlink.categories[0],function(err,feedsFromDb){
-					
-				  //Check if feeds from database exists
-				  if(feedsFromDb.length>0){
+				getfeedsFromdb(userlink,user,function(err,feedsFromDb){
+					  		
 				  	//Get feeds from the newsrack by passing the link as parameter
-					getFeed (userlink.link, function (err, feedItems) {
+					getFeed (feedlink, function (err, feedItems) {
+
+					 //Check if feeds from database exists	
+					  if(feedsFromDb.length>0){	
 						if (!err) {
 							
 							var feedstoUpdate = differenceOfFeeds(feedsFromDb,feedItems);
@@ -117,9 +125,9 @@ request(options, function(err, res, body) {
 								callback(undefined,false);
 							}	
 						}
-
+					  }	
 					});
-				  }
+				  
 				})
 			  
 				});
@@ -131,8 +139,19 @@ request(options, function(err, res, body) {
 }
 
 //Fumction to get feeds from database on feedname
-function getfeedsFromdb(feedname,callback) {
-
+function getfeedsFromdb(feedname,feed,callback) {
+	//Check if metacategory is defined and fetch the feeds
+		if(feedname.categories[0] == undefined){
+			//console.log(feed);
+			request(url+'/' + db + '/_design/feeds/_view/latestoldestcategory?startkey=["'+feed.doc.feedname+'"]&endkey=["'+feed.doc.feedname+'",{}]', function(err, res, body) {
+				//console.log(body);
+				if(body != undefined){
+					callback(undefined,JSON.parse(body).rows);				
+				}
+					  
+			});
+		}
+		else{
 			request(url+'/' + db + '/_design/feeds/_view/metacategories?startkey=["'+feedname+'"]&endkey=["'+feedname+'",{}]', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
@@ -140,6 +159,7 @@ function getfeedsFromdb(feedname,callback) {
 				}
 					  
 			});
+		}
 }
 //Function to update the database
 function updateDB(data,feedname,callback){
@@ -252,8 +272,8 @@ function getFeed (urlfeed, callback) {
 		});
 	req.on ("error", function (err) {
 		console.log ("getFeed: err.message == " + err.message);
-		callback(err);
-		});
+		callback(err.message);
+	});
 	feedparser.on ("readable", function () {
 		try {
 			var item = this.read (), flnew;
@@ -269,9 +289,9 @@ function getFeed (urlfeed, callback) {
 		callback (undefined, feedItems);
 		});
 	feedparser.on ("error", function (err) {
-		console.log ("getFeed: err.message == " + err.message);
-		callback (err);
-		});
+		console.log ("getFeed: err.message ==" + err.message);
+		callback (err.message);
+	});
 	}
 
 
