@@ -24,7 +24,8 @@ var btoa = require('btoa');
 //Import request to make http requests
 const request = require ("request");
 //Import db protocol from environment and store in variable
-var dbprotocol = process.env.dbprotocol;
+var dbprotocol = process.env.dbprotocol;//for production environment
+//var dbprotocol = 'http://';
 //Import db port of feedparser service from environment and store in variable
 var port=process.env.feedParserPort || 3500;
 
@@ -44,10 +45,14 @@ var url = dbprotocol+dbhost; //for production environment
 	//var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
 var db = process.env.feeddbname; //for production environment
-	//var db ='feeds';//for development environment
+//	var db ='feeds';//for development environment
+//Import client url to set cors	
+	
+//var clienturl='localhost:4200';
+	var clienturl=process.env.clienturl;//for production environment
 
-
-
+	var clienturlwithprotocol=dbprotocol + clienturl
+	console.log(clienturlwithprotocol);
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2017 Dave Winer
@@ -102,10 +107,10 @@ request(options, function(err, res, body) {
 				}
 				//Get feeds from the db by passing the feedname 
 				getfeedsFromdb(userlink,user,function(err,feedsFromDb){
-					  		
+					  		console.log(feedlink,feedsFromDb.length);
 				  	//Get feeds from the newsrack by passing the link as parameter
 					getFeed (feedlink, function (err, feedItems) {
-
+						//console.log(feedItems);
 					 //Check if feeds from database exists	
 					  if(feedsFromDb.length>0){	
 						if (!err) {
@@ -115,7 +120,7 @@ request(options, function(err, res, body) {
 							if(feedstoUpdate.length > 0){
 								
 								updateDB(feedstoUpdate,user.doc.feedname,function(err,response){
-									console.log(response);
+									//console.log(response);
 									if(response){
 										callback(undefined,true);
 									}
@@ -152,7 +157,7 @@ function getfeedsFromdb(feedname,feed,callback) {
 			});
 		}
 		else{
-			request(url+'/' + db + '/_design/feeds/_view/metacategories?startkey=["'+feedname+'"]&endkey=["'+feedname+'",{}]', function(err, res, body) {
+			request(url+'/' + db + '/_design/feeds/_view/metacategories?startkey=["'+feedname.categories[0]+'"]&endkey=["'+feedname.categories[0]+'",{}]', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
@@ -202,8 +207,8 @@ function differenceOfFeeds(feedsarray,feedItems) {
 //cors settings
 app.use(function(req, res, next) {
   //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
- 	//console.log(clienturlwithprotocol);
-  var allowedOrigins='localhost:3000';
+ 	console.log(clienturlwithprotocol);
+   var allowedOrigins=clienturlwithprotocol;
   var origin = req.headers.origin;
   if(allowedOrigins.indexOf(origin) > -1){
        res.setHeader('Access-Control-Allow-Origin', origin);
