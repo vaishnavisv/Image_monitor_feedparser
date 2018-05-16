@@ -45,14 +45,14 @@ var url = dbprotocol+dbhost; //for production environment
 	//var url = 'http://localhost:5984';//for development environment
 //Import database feeds from environment variable
 var db = process.env.feeddbname; //for production environment
-//	var db ='feeds';//for development environment
+	//var db ='feeds';//for development environment
 //Import client url to set cors	
 	
 //var clienturl='localhost:4200';
 	var clienturl=process.env.clienturl;//for production environment
 
 	var clienturlwithprotocol=dbprotocol + clienturl
-	console.log(clienturlwithprotocol);
+	//console.log(clienturlwithprotocol);
 
 /*  The MIT License (MIT)
 	Copyright (c) 2014-2017 Dave Winer
@@ -148,7 +148,7 @@ function getfeedsFromdb(feedname,feed,callback) {
 	//Check if metacategory is defined and fetch the feeds
 		if(feedname.categories[0] == undefined){
 			//console.log(feed);
-			request(url+'/' + db + '/_design/feeds/_view/latestoldestcategory?startkey=["'+feed.doc.feedname+'"]&endkey=["'+feed.doc.feedname+'",{}]', function(err, res, body) {
+			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+feed.doc.feedname+'"', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
@@ -157,7 +157,7 @@ function getfeedsFromdb(feedname,feed,callback) {
 			});
 		}
 		else{
-			request(url+'/' + db + '/_design/feeds/_view/metacategories?startkey=["'+feedname.categories[0]+'"]&endkey=["'+feedname.categories[0]+'",{}]', function(err, res, body) {
+			request(url+'/' + db + '/_design/feeds/_view/metacategoryfeeds?key="'+feedname.categories[0]+'"', function(err, res, body) {
 				//console.log(body);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
@@ -207,7 +207,7 @@ function differenceOfFeeds(feedsarray,feedItems) {
 //cors settings
 app.use(function(req, res, next) {
   //var allowedOrigins = ['http://127.0.0.1:8020', 'http://localhost:8020', 'http://127.0.0.1:9000', 'http://localhost:9000'];
- 	console.log(clienturlwithprotocol);
+ 	//console.log(clienturlwithprotocol);
    var allowedOrigins=clienturlwithprotocol;
   var origin = req.headers.origin;
   if(allowedOrigins.indexOf(origin) > -1){
