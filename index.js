@@ -162,8 +162,9 @@ request(options, function(err, res, body) {
 
 //Fumction to get feeds from database on feedname
 function getfeedsFromdb(feedname,callback) {
-	request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+feedname+'"', function(err, res, body) {
-		console.log("catte",JSON.parse(body).rows.length);
+	//console.log(encodeURIComponent(feedname))
+	request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+encodeURIComponent(feedname)+'"', function(err, res, body) {
+		console.log("catte",feedname,JSON.parse(body).rows.length);
 		if(body != undefined){
 			callback(undefined,JSON.parse(body).rows);				
 		}
