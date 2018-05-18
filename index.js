@@ -49,7 +49,7 @@ var db = process.env.feeddbname; //for production environment
 //Import client url to set cors	
 	
 //var clienturl='localhost:4200';
-	var clienturl=process.env.clienturl;//for production environment
+		var clienturl=process.env.clienturl;//for production environment
 
 	var clienturlwithprotocol= dbprotocol + clienturl;
 	//console.log(clienturlwithprotocol);
@@ -92,7 +92,7 @@ var job1 = new cron.CronJob({
   timeZone: 'America/Los_Angeles'
 });
 //console.log('job1 status', job1.running); // job1 status undefined
-job1.start();
+//job1.start();
 console.log('job1 status running', job1.running); // job1 status undefined
 //Get all user's subscription links and check for the last 	
 function getUsersSubscriptionsLinks(callback){
