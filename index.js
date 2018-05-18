@@ -51,7 +51,7 @@ var db = process.env.feeddbname; //for production environment
 //var clienturl='localhost:4200';
 	var clienturl=process.env.clienturl;//for production environment
 
-	var clienturlwithprotocol=dbprotocol + clienturl
+	var clienturlwithprotocol= dbprotocol + clienturl;
 	//console.log(clienturlwithprotocol);
 
 /*  The MIT License (MIT)
@@ -75,14 +75,31 @@ var db = process.env.feeddbname; //for production environment
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	*/
+/*Cron job try*/
+var cron = require('cron');
 
+var job1 = new cron.CronJob({
+  cronTime: '* */30 * * * 0-6',
+  onTick: function() {
+  	//console.log('running every minute 1, 2, 4 and 5');
+    console.log('job 1 ticked');
+    	getUsersSubscriptionsLinks(function(err,response){
+    		console.log('Response updated',response);
+    	});
 
+    },
+  start: false,
+  timeZone: 'America/Los_Angeles'
+});
+//console.log('job1 status', job1.running); // job1 status undefined
+job1.start();
+console.log('job1 status running', job1.running); // job1 status undefined
 //Get all user's subscription links and check for the last 	
-function getUsersSubscriptionsLinks(user,callback){
+function getUsersSubscriptionsLinks(callback){
 	//options to get the user subsrciptions from the user's database
 	const options = {
 	  method: 'GET',
-	  uri: user+'/_all_docs?include_docs=true',
+	  uri: url+'/' + db + '/_design/feeds/_view/link?reduce=true&group_level=2',
 	  headers: {
 	    'Content-Type': 'application/json',
 	    'Authorization': 'Basic '+btoa(dbusername+':'+dbpassword)
@@ -90,26 +107,26 @@ function getUsersSubscriptionsLinks(user,callback){
 	}
 request(options, function(err, res, body) {
 		if(body != undefined){
-		
+			//console.log(JSON.parse(body))
 		if(JSON.parse(body).rows.length > 0){	
 
 		//Parse the result to json and store the user's link in an array
-		JSON.parse(body).rows.map(user=>{
-			
-			user.doc.metadata.map(userlink=>{
+		JSON.parse(body).rows.map(link=>{
+			//console.log("all",link.key[0],link.key[1]);
+			//user.doc.metadata.map(userlink=>{
 				//console.log("all",userlink)
 				//Check if the xml rss link is null
-				if(userlink.xmlurl == null){
+				/*if(userlink.xmlurl == null){
 					var feedlink=userlink.link;
 				}	
 				else{
 					feedlink=userlink.xmlurl;
-				}
+				}*/
 				//Get feeds from the db by passing the feedname 
-				getfeedsFromdb(userlink,user,function(err,feedsFromDb){
-					  		console.log(feedlink,feedsFromDb.length);
+				getfeedsFromdb(link.key[1],function(err,feedsFromDb){
+					  		console.log(feedsFromDb.length);
 				  	//Get feeds from the newsrack by passing the link as parameter
-					getFeed (feedlink, function (err, feedItems) {
+					getFeed (link.key[0], function (err, feedItems) {
 						//console.log(feedItems);
 					 //Check if feeds from database exists	
 					  if(feedsFromDb.length>0){	
@@ -119,7 +136,7 @@ request(options, function(err, res, body) {
 							
 							if(feedstoUpdate.length > 0){
 								
-								updateDB(feedstoUpdate,user.doc.feedname,function(err,response){
+								updateDB(feedstoUpdate,link.key[1],function(err,response){
 									//console.log(response);
 									if(response){
 										callback(undefined,true);
@@ -135,7 +152,7 @@ request(options, function(err, res, body) {
 				  
 				})
 			  
-				});
+				//});
 			});
 	  	}	
 	  	}
@@ -144,12 +161,19 @@ request(options, function(err, res, body) {
 }
 
 //Fumction to get feeds from database on feedname
-function getfeedsFromdb(feedname,feed,callback) {
+function getfeedsFromdb(feedname,callback) {
+	request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+feedname+'"', function(err, res, body) {
+		console.log("catte",JSON.parse(body).rows.length);
+		if(body != undefined){
+			callback(undefined,JSON.parse(body).rows);				
+		}
+			  
+	});
 	//Check if metacategory is defined and fetch the feeds
-		if(feedname.categories[0] == undefined){
+		/*if(feedname.categories[0] == undefined){
 			//console.log(feed);
 			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+feed.doc.feedname+'"', function(err, res, body) {
-				//console.log(body);
+				console.log("catte",JSON.parse(body).rows.length);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
 				}
@@ -158,13 +182,13 @@ function getfeedsFromdb(feedname,feed,callback) {
 		}
 		else{
 			request(url+'/' + db + '/_design/feeds/_view/metacategoryfeeds?key="'+feedname.categories[0]+'"', function(err, res, body) {
-				//console.log(body);
+				console.log("meta",JSON.parse(body).rows.length);
 				if(body != undefined){
 					callback(undefined,JSON.parse(body).rows);				
 				}
 					  
 			});
-		}
+		}*/
 }
 //Function to update the database
 function updateDB(data,feedname,callback){
@@ -224,7 +248,7 @@ app.use(function(req, res, next) {
 //Pull new feeds from newsrack
 app.get('/',cors(),function(req, res) {
 	var syncStatus;
-	getUsersSubscriptionsLinks(req.query.user,function(err,response){
+	getUsersSubscriptionsLinks(function(err,response){
 		console.log(response);
 
 		if(response==true){
