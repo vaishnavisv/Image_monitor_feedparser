@@ -92,14 +92,14 @@ var job1 = new cron.CronJob({
   timeZone: 'America/Los_Angeles'
 });
 //console.log('job1 status', job1.running); // job1 status undefined
-//job1.start();
+job1.start();
 console.log('job1 status running', job1.running); // job1 status undefined
 //Get all user's subscription links and check for the last 	
 function getUsersSubscriptionsLinks(callback){
 	//options to get the user subsrciptions from the user's database
 	const options = {
 	  method: 'GET',
-	  uri: url+'/' + db + '/_design/feeds/_view/link?reduce=true&group_level=2',
+	  uri: 'http://stage-couch.test.openrun.net/supertest%24mediamonitor18/_all_docs?include_docs=true',
 	  headers: {
 	    'Content-Type': 'application/json',
 	    'Authorization': 'Basic '+btoa(dbusername+':'+dbpassword)
@@ -107,26 +107,27 @@ function getUsersSubscriptionsLinks(callback){
 	}
 request(options, function(err, res, body) {
 		if(body != undefined){
-			//console.log(JSON.parse(body))
+			//console.log(JSON.parse(body).rows)
 		if(JSON.parse(body).rows.length > 0){	
 
 		//Parse the result to json and store the user's link in an array
 		JSON.parse(body).rows.map(link=>{
 			//console.log("all",link.key[0],link.key[1]);
-			//user.doc.metadata.map(userlink=>{
+			link.doc.metadata.map(userlink=>{
 				//console.log("all",userlink)
+				//Hack only to update the mediamonitor subscriptions
 				//Check if the xml rss link is null
-				/*if(userlink.xmlurl == null){
+				if(userlink.xmlurl == null){
 					var feedlink=userlink.link;
 				}	
 				else{
 					feedlink=userlink.xmlurl;
-				}*/
+				}
 				//Get feeds from the db by passing the feedname 
-				getfeedsFromdb(link.key[1],function(err,feedsFromDb){
+				getfeedsFromdb(userlink,function(err,feedsFromDb){
 					  		console.log(feedsFromDb.length);
 				  	//Get feeds from the newsrack by passing the link as parameter
-					getFeed (link.key[0], function (err, feedItems) {
+					getFeed (feedlink,function (err, feedItems) {
 						//console.log(feedItems);
 					 //Check if feeds from database exists	
 					  if(feedsFromDb.length>0){	
@@ -152,7 +153,7 @@ request(options, function(err, res, body) {
 				  
 				})
 			  
-				//});
+				});
 			});
 	  	}	
 	  	}
@@ -163,15 +164,16 @@ request(options, function(err, res, body) {
 //Fumction to get feeds from database on feedname
 function getfeedsFromdb(feedname,callback) {
 	//console.log(encodeURIComponent(feedname))
-	request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+encodeURIComponent(feedname)+'"', function(err, res, body) {
+	/*request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+encodeURIComponent(feedname)+'"', function(err, res, body) {
 		console.log("catte",feedname,JSON.parse(body).rows.length);
 		if(body != undefined){
 			callback(undefined,JSON.parse(body).rows);				
 		}
 			  
-	});
+	});*/
+	//console.log(feedname);
 	//Check if metacategory is defined and fetch the feeds
-		/*if(feedname.categories[0] == undefined){
+		if(feedname.categories[0] == undefined){
 			//console.log(feed);
 			request(url+'/' + db + '/_design/feeds/_view/categoryfeeds?key="'+feed.doc.feedname+'"', function(err, res, body) {
 				console.log("catte",JSON.parse(body).rows.length);
@@ -189,7 +191,7 @@ function getfeedsFromdb(feedname,callback) {
 				}
 					  
 			});
-		}*/
+		}
 }
 //Function to update the database
 function updateDB(data,feedname,callback){
