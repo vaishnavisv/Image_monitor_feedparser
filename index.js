@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express();
 var cors = require('cors')
+var glob = require("glob");
 //Import feed parser to parse the xml feeds to json
 var FeedParser = require('feedparser');
 // Load the full build.
@@ -9,7 +10,7 @@ var _ = require('lodash');
 //var _ = require('lodash/core');
 // Load the FP build for immutable auto-curried iteratee-first data-last methods.
 var fp = require('lodash/fp');
-
+var fs = require("fs");
 // Load method categories.
 var array = require('lodash/array');
 var object = require('lodash/fp/object');
@@ -24,15 +25,18 @@ var btoa = require('btoa');
 //Import request to make http requests
 const request = require ("request");
 //Import db protocol from environment and store in variable
-var dbprotocol = process.env.dbprotocol;//for production environment
-//var dbprotocol = 'http://';
+//var dbprotocol = process.env.dbprotocol;//for production environment
+var dbprotocol = 'http://';
 //Import db port of feedparser service from environment and store in variable
 var port=process.env.feedParserPort || 3000;
 
-
+var serverlink='C:/XAMPP/HTDOCS/imagefiles/';
+var serverpath='http://192.168.1.15/imagefiles/';
+var jsonpath='C:/XAMPP/HTDOCS/imagefiles/**/*.json';
 //connecting to couch db
 //Import database host like 'mmcouch.test.openrun.net'
 var dbhost=process.env.dbhost;
+
 //Import database port like 5984 for couchdb in local (localhost:5984)
 var dbport=process.env.dbPort;
 //Import database username and password from the environment
@@ -48,7 +52,7 @@ var db = process.env.feeddbname; //for production environment
 	//var db ='feeds';//for development environment
 //Import client url to set cors
 
-var clienturl='localhost:4200';
+var clienturl='http://192.168.1.36';
 		//var clienturl=process.env.clienturl;//for production environment
 
 	var clienturlwithprotocol= dbprotocol + clienturl;
@@ -98,6 +102,7 @@ app.use(function(req, res, next) {
 
 //Fetch the feeds when user adds a new link
 app.get('/',cors(),function(req, res) {
+							
 	getFeed (req.query.id, function (err, feedItems) {
 		if(err){
 			//res.send(err);
@@ -110,6 +115,79 @@ app.get('/',cors(),function(req, res) {
 	});
 });
 
+app.get('/getfeed',cors(),function(req,res)
+{
+	
+
+var filename=req.query.username;
+console.log("fname",filename);
+var url=serverlink+filename+'/'+filename+'.json';
+console.log("url",url);
+
+fs.readFile(url, (err, data) => {  
+    if (err) throw err;
+    let revalue = JSON.parse(data);
+    //console.log(revalue);
+	res.send(revalue);
+});
+
+});
+
+app.get('/getallfeeds',cors(),function(req,res)
+{
+	
+  getAllJson(function(err,result){
+  	
+  	var allfeedjson=[];
+  	allfeedjson.push(result);
+  	console.log("res",allfeedjson);
+  	res.send(allfeedjson);
+  })
+  
+  
+  
+/*
+var _inArray = function(needle, haystack) {
+  for(var k in haystack) {
+    if(haystack[k] === needle) {
+      return true;
+    }
+  }
+  return false;
+}
+*/
+
+
+
+});
+function getAllJson (callback) {
+	// body...
+	glob(jsonpath, function(err, files) 
+	{ // read the folder or folders if you want: example json/**/*.json
+		var allfeedjson=[];
+		var obj;
+	  if(err) {
+	    console.log("cannot read the folder, something goes wrong with glob", err);
+	  }
+	  var matters = [];
+	  files.forEach(function(file) {
+	    fs.readFile(file, 'utf8', function (err, data)
+	     { // Read each file
+	      if(err) {
+	        console.log("cannot read the file, something goes wrong with the file", err);
+	      }
+	      obj = JSON.parse(data);
+		  
+			//return allfeedjson;
+		   	callback(undefined,obj)
+		  
+	    });
+
+	  });
+	    
+		
+	});
+}
 
 //Function to get the parsed json feeds from an xml
 function getFeed (urlfeed, callback) {
@@ -133,6 +211,13 @@ function getFeed (urlfeed, callback) {
 			var item = this.read (), flnew;
 			if (item !== null) { //2/9/17 by DW
 				feedItems.push (item);
+				fs.writeFile(serverlink+"demouser.json", JSON.stringify(feedItems), (err) => {
+  			  if (err) {
+        		console.error(err);
+        		return;
+    };
+    console.log("File has been created");
+});
 				}
 			}
 		catch (err) {
